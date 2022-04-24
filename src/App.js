@@ -1,17 +1,24 @@
-import "./App.css";
+import "primereact/resources/themes/lara-light-indigo/theme.css"; //theme
+import "primereact/resources/primereact.min.css"; //core css
+import "primeicons/primeicons.css"; //ico
 
-import { Dropdown } from "./components/Dropdown/Dropdown";
-import { useGetData } from "./hooks/useGetData";
+import { CustomDropdown } from "./components/CustomDropdown/CustomDropdown";
+
+import "./App.css";
+import { useState } from "react";
 
 function App() {
-    const { data } = useGetData({ url: "https://swapi.dev/api/people" });
-
-    if (data === undefined) return <div>Loading...</div>;
-    if (data === null) return <div>Error occurred while fetching data, please try again.</div>;
-
+    const [value, setValue] = useState(undefined);
+    value && console.log(value);
     return (
         <div className="App">
-            <Dropdown options={data.results} />
+            <CustomDropdown
+                value={value}
+                name="dropdown"
+                url="https://swapi.dev/api/people"
+                handleSelect={(selected) => setValue(selected.name)}
+                // minFilterChar={3}
+            />
         </div>
     );
 }
