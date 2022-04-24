@@ -1,73 +1,88 @@
-import { ProgressSpinner } from "primereact/progressspinner";
-import { useState, useEffect, useRef } from "react";
-import { InputText } from "primereact/inputtext";
-import axios from "axios";
+import { useEffect, useRef, useState } from "react";
+import { Oval, SpinningCircles, useLoading } from "@agney/react-loading";
 
 import { useDebounce } from "../../hooks/useDebounce";
+
 import "./CustomDropdown.css";
 
-// TODO! infinite scroll 
-export const CustomDropdown = ({ value, name, minFilterChar, placeholder, url, handleSelect }) => {
-    const ref = useRef();
-
-    const [data, setData] = useState(undefined);
-    const [filter, setFilter] = useState("");
-
+export const CustomDropdown = ({
+    selected,
+    handleChangeSelected,
+    options,
+    handleSearch,
+    placeholder = "Choose...",
+    filterPlaceholder = "Filter...",
+    meta,
+}) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [shouldDebounce, setShouldDebounce] = useState(true);
 
-    const debounceFilter = useDebounce(filter, 500, shouldDebounce);
-
-    useEffect(() => {
-        if (dropdownOpen && minFilterChar === undefined) {
-            getData(1, !!debounceFilter.trim().length > 0 ? debounceFilter : undefined);
-        }
-    }, [dropdownOpen]);
-
-    useEffect(() => {
-        const handleOpenDropdown = () => {
-            if (!!minFilterChar) {
-                if (debounceFilter.trim().length >= minFilterChar) {
-                    !dropdownOpen && openDropdown();
-                    getData(1, debounceFilter);
-                } else if (dropdownOpen) closeDropdown();
-            } else {
-                if (debounceFilter.trim().length > 0) getData(1, debounceFilter);
-                else if (data !== undefined) getData();
-            }
-        };
-
-        handleOpenDropdown();
-    }, [debounceFilter]);
-
-    const getData = async (page = 1, search = undefined) => {
-        try {
-            const oldOptions = data?.options && page !== 1 ? [...data.options] : [];
-            !!data && setData(undefined);
-            const params = search ? { params: { search: search } } : {};
-
-            const response = await axios.get(`${url}/?page=${page}`, params);
-            const { results: newOptions, ...rest } = response.data;
-
-            setData({ options: [...oldOptions, ...newOptions], meta: rest });
-        } catch (e) {
-            setData(null);
-            console.log(e);
-        }
+    const openDropdown = () => {
+        handleSearch(1);
+        setDropdownOpen(true);
     };
-
-    const openDropdown = () => setDropdownOpen(true);
 
     const closeDropdown = () => {
         setDropdownOpen(false);
-        setData(undefined);
     };
 
-    const innerHandleSelect = (o) => {
-        handleSelect(o);
-        setShouldDebounce(false);
-        setFilter(o.name);
-        closeDropdown();
+    return (
+        <div className="dropdown-container">
+            <input
+                placeholder={placeholder}
+                className="dropdown-input"
+                id="filter-text-input"
+                value={selected?.label || ""}
+                readOnly
+                onFocus={openDropdown}
+            />
+            {dropdownOpen && (
+                <DropdownList
+                    selected={selected}
+                    options={options}
+                    closeDropdown={closeDropdown}
+                    handleChangeSelected={handleChangeSelected}
+                    handleSearch={handleSearch}
+                    filterPlaceholder={filterPlaceholder}
+                    meta={meta}
+                />
+            )}
+        </div>
+    );
+};
+
+const DropdownList = ({ selected, options, closeDropdown, handleChangeSelected, handleSearch, filterPlaceholder, meta }) => {
+    const dropDownRef = useRef();
+    const scrollRef = useRef();
+
+    const [filter, setFilter] = useState("");
+    const [omittedInit, setOmittedInit] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const debounceFilter = useDebounce(filter);
+
+    useEffect(() => {
+        if (omittedInit) handleSearch(1, debounceFilter);
+        else setOmittedInit(true);
+    }, [debounceFilter]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!!options && dropDownRef && !dropDownRef.current.contains(e.target) && e.target.id !== "filter-text-input") closeDropdown();
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [closeDropdown, options]);
+
+    const handleScroll = async () => {
+        if (scrollRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            if (parseInt(scrollTop + clientHeight) === scrollHeight && meta.next) {
+                setIsLoading(true);
+                await handleSearch(meta.page + 1, debounceFilter.trim());
+                setIsLoading(false);
+            }
+        }
     };
 
     const handleKeyDown = (e) => {
@@ -76,9 +91,8 @@ export const CustomDropdown = ({ value, name, minFilterChar, placeholder, url, h
                 closeDropdown();
                 break;
             case "Enter":
-                if (data?.options.length === 1) {
-                    ref?.current && ref?.current.blur();
-                    innerHandleSelect(data?.options[0]);
+                if (options?.length === 1) {
+                    handleSelection(options[0]);
                 }
                 break;
             default:
@@ -86,59 +100,34 @@ export const CustomDropdown = ({ value, name, minFilterChar, placeholder, url, h
         }
     };
 
-    const handleFilterChange = (e) => {
-        !shouldDebounce && setShouldDebounce(true);
-        setFilter(e.target.value);
+    const handleSelection = (item) => {
+        handleChangeSelected(item);
+        closeDropdown();
     };
 
-    return (
-        <div className="dropdown-container">
-            <InputText
-                ref={ref}
-                name={name}
-                value={filter}
-                autoComplete="off"
-                id="filter-text-input"
-                placeholder={placeholder}
-                onChange={handleFilterChange}
-                onFocus={() => !minFilterChar && openDropdown()}
-                onKeyDown={handleKeyDown}
-            />
-            {dropdownOpen && (
-                <DropdownList value={value} options={data?.options} closeDropdown={closeDropdown} handleSelect={innerHandleSelect} />
-            )}
-        </div>
-    );
-};
-
-const DropdownList = ({ value, options, handleSelect, closeDropdown }) => {
-    const ref = useRef();
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (!!options && ref && !ref.current.contains(e.target) && e.target.id !== "filter-text-input") closeDropdown();
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [closeDropdown, options]);
-
     if (options === null) return <div className="dropdown error">Error occurred while fetching data</div>;
-    if (options === undefined)
-        return (
-            <div className="dropdown refresh">
-                <ProgressSpinner className="progress-spinner" />
-            </div>
-        );
+    if (options === undefined) return <div className="dropdown refresh">Loading...</div>;
     if (options.length === 0) return <div className="dropdown no-data">No data to display</div>;
 
     return (
-        <ul className="dropdown" ref={ref}>
-            {options.map((o) => (
-                <li className={value === o.name ? "selected" : ""} onClick={() => handleSelect(o)} key={o.name}>
-                    <p>{o.name}</p>
-                </li>
-            ))}
-        </ul>
+        <div ref={dropDownRef} className="dropdown">
+            <div className="filter-container">
+                <input
+                    className="dropdown-input"
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    placeholder={filterPlaceholder}
+                    onKeyDown={handleKeyDown}
+                />
+            </div>
+            <ul ref={scrollRef} className="dropdown-list" onScroll={handleScroll}>
+                {options.map((o) => (
+                    <li key={o.value} className={selected?.label === o.label ? "selected" : ""} onClick={() => handleSelection(o)}>
+                        <p>{o.label}</p>
+                    </li>
+                ))}
+                <div className="loading-list-item">{isLoading && <Oval width="50" />}</div>
+            </ul>
+        </div>
     );
-};
+}; 
