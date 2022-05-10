@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Oval, SpinningCircles, useLoading } from "@agney/react-loading";
+import { Oval } from "@agney/react-loading";
+import { IoMdClose } from "react-icons/io";
 
 import { useDebounce } from "../../hooks/useDebounce";
 
@@ -13,23 +14,31 @@ export const CustomDropdown = ({
     placeholder = "Choose...",
     filterPlaceholder = "Filter...",
     meta,
+    clearable = true,
 }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const openDropdown = () => {
-        handleSearch(1);
+    const openDropdown = async () => {
+        setIsLoading(true);
         setDropdownOpen(true);
+        await handleSearch(1);
+        setIsLoading(false);
     };
 
     const closeDropdown = () => {
         setDropdownOpen(false);
     };
 
+    const handleClearSelected = () => handleChangeSelected(undefined);
+
+    const handleToggleIsLoading = (_isLoading) => setIsLoading(_isLoading);
+
     return (
         <div className="dropdown-container">
             <input
                 placeholder={placeholder}
-                className="dropdown-input"
+                className={`dropdown-input ${dropdownOpen ? "dropdown-open" : ""}`}
                 id="filter-text-input"
                 value={selected?.label || ""}
                 readOnly
@@ -44,19 +53,31 @@ export const CustomDropdown = ({
                     handleSearch={handleSearch}
                     filterPlaceholder={filterPlaceholder}
                     meta={meta}
+                    isLoading={isLoading}
+                    handleToggleIsLoading={handleToggleIsLoading}
                 />
             )}
+            {clearable && selected && <IoMdClose className="close-icon" onClick={handleClearSelected} />}
         </div>
     );
 };
 
-const DropdownList = ({ selected, options, closeDropdown, handleChangeSelected, handleSearch, filterPlaceholder, meta }) => {
+const DropdownList = ({
+    selected,
+    options,
+    closeDropdown,
+    handleChangeSelected,
+    handleSearch,
+    filterPlaceholder,
+    meta,
+    isLoading,
+    handleToggleIsLoading,
+}) => {
     const dropDownRef = useRef();
     const scrollRef = useRef();
 
     const [filter, setFilter] = useState("");
     const [omittedInit, setOmittedInit] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     const debounceFilter = useDebounce(filter);
 
@@ -75,12 +96,13 @@ const DropdownList = ({ selected, options, closeDropdown, handleChangeSelected, 
     }, [closeDropdown, options]);
 
     const handleScroll = async () => {
+        if (isLoading) return;
         if (scrollRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
             if (parseInt(scrollTop + clientHeight) === scrollHeight && meta.next) {
-                setIsLoading(true);
+                handleToggleIsLoading(true);
                 await handleSearch(meta.page + 1, debounceFilter.trim());
-                setIsLoading(false);
+                handleToggleIsLoading(false);
             }
         }
     };
@@ -106,8 +128,7 @@ const DropdownList = ({ selected, options, closeDropdown, handleChangeSelected, 
     };
 
     if (options === null) return <div className="dropdown error">Error occurred while fetching data</div>;
-    if (options === undefined) return <div className="dropdown refresh">Loading...</div>;
-    if (options.length === 0) return <div className="dropdown no-data">No data to display</div>;
+    if (options?.length === 0) return <div className="dropdown no-data">No data to display</div>;
 
     return (
         <div ref={dropDownRef} className="dropdown">
@@ -118,16 +139,21 @@ const DropdownList = ({ selected, options, closeDropdown, handleChangeSelected, 
                     onChange={(e) => setFilter(e.target.value)}
                     placeholder={filterPlaceholder}
                     onKeyDown={handleKeyDown}
+                    disabled={isLoading}
                 />
             </div>
             <ul ref={scrollRef} className="dropdown-list" onScroll={handleScroll}>
-                {options.map((o) => (
+                {options?.map((o) => (
                     <li key={o.value} className={selected?.label === o.label ? "selected" : ""} onClick={() => handleSelection(o)}>
                         <p>{o.label}</p>
                     </li>
                 ))}
-                <div className="loading-list-item">{isLoading && <Oval width="50" />}</div>
+                {isLoading && (
+                    <div className={`loading-list-item ${!options || options.length == 0 ? "empty-options" : ""}`}>
+                        <Oval width="50" />
+                    </div>
+                )}
             </ul>
         </div>
     );
-}; 
+};

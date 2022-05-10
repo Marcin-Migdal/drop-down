@@ -14,16 +14,17 @@ function App() {
 
     const getData = async (page = 1, search) => {
         try {
-            const oldOptions = page > 1 ? data.options : [];
-            const currentUrl = !!search ? `${url}/?page=${page}&search=${search}` : `${url}/?page=${page}`;
-            
-            // TODO! try to stop fetching if data?.meta.current and currentUrl both don't have "&search="
-            if (currentUrl == data?.meta.current) return;
+            let oldOptions = [];
+            const newUrl = `${url}/?page=${page}${!!search ? "&search=" + search : ""}`;
 
-            const response = await axios.get(currentUrl);
+            if (newUrl == data?.meta.currentUrl) return;
+            else if (page > 1) oldOptions = data.options;
+            else setData(undefined);
+
+            const response = await axios.get(newUrl);
             const { results, ...rest } = response.data;
 
-            setData({ options: [...oldOptions, ...mapToLabelValue(results)], meta: { ...rest, page, current: currentUrl } });
+            setData({ options: [...oldOptions, ...mapToLabelValue(results)], meta: { ...rest, page, currentUrl: newUrl } });
         } catch (e) {
             setData(null);
             console.log(e);
