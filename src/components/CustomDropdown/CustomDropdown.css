@@ -1,0 +1,130 @@
+.dropdown-container {
+    position: relative;
+}
+
+.dropdown-container .dropdown-input {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    outline: none;
+    border-radius: 4px;
+    border: 1px solid #a6a6a6;
+}
+
+.dropdown-container .dropdown-input.dropdown-open {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.dropdown-container .dropdown-input:focus {
+    box-shadow: 0 0 4px #6366f1;
+    border: 1px solid #b9baf9;
+}
+
+.dropdown-container .close-icon {
+    position: absolute;
+    font-size: 1.25rem;
+    padding: 0.1rem;
+    left: calc(100% - 1.25rem - 0.25rem);
+    top: calc(50% - 1.25rem / 2);
+    opacity: 0.75;
+}
+
+.dropdown-container .close-icon:hover {
+    background-color: #e6e6e6;
+    border-radius: 1.45rem;
+}
+
+.dropdown-container .dropdown .filter-container {
+    padding: 0.25rem;
+    border: 0px solid lightgray;
+    border-block-width: 1px;
+}
+
+.dropdown-container .filter-container .dropdown-input {
+    border-color: lightgray;
+}
+
+.dropdown {
+    width: 100%;
+    position: absolute;
+    box-shadow: 0 0 8px #6366f1;
+}
+
+.dropdown-list {
+    list-style: none;
+    overflow-y: scroll;
+    height: 15rem;
+}
+
+.dropdown.no-data,
+.dropdown.refresh,
+.dropdown.error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown li {
+    padding: 0.5rem 0.5rem;
+}
+
+.dropdown li:first-of-type {
+    padding-top: 0.75rem;
+}
+
+.dropdown li:last-of-type {
+    padding-bottom: 0.75rem;
+}
+
+.dropdown li:hover {
+    background-color: #b9baf9;
+    color: white !important;
+}
+.dropdown li.selected {
+    background-color: #a1a3f7;
+}
+.dropdown li:hover p,
+.dropdown li.selected p {
+    color: white !important;
+}
+
+.dropdown .loading-list-item {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.dropdown .loading-list-item.empty-options {
+    height: 100%;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background-color: #fff6f2;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background-color: #8a8bf5;
+    border-radius: 30px;
+}
+
+@keyframes p-progress-spinner-color {
+    100%,
+    0% {
+        stroke: #4346ef;
+    }
+    40% {
+        stroke: #7274f3;
+    }
+    66% {
+        stroke: #a1a3f7;
+    }
+    80%,
+    90% {
+        stroke: #d0d1fb;
+    }
+}
