@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 import { CustomDropdown } from "./components/CustomDropdown/CustomDropdown";
@@ -9,7 +9,7 @@ const mapToLabelValue = (array) => array.map((r) => ({ label: r.name, value: r.u
 
 const url = "https://swapi.dev/api/people";
 function App() {
-    const [data, setData] = useState(undefined);
+    const [data, setData] = useState();
     const [selected, setSelected] = useState(undefined);
 
     const getData = async (page = 1, search) => {
@@ -17,7 +17,7 @@ function App() {
             let oldOptions = [];
             const newUrl = `${url}/?page=${page}${!!search ? "&search=" + search : ""}`;
 
-            if (newUrl == data?.meta.currentUrl) return;
+            if (newUrl === data?.meta.currentUrl) return;
             else if (page > 1) oldOptions = data.options;
             else setData(undefined);
 
@@ -30,7 +30,7 @@ function App() {
             console.log(e);
         }
     };
-
+    
     return (
         <div className="App">
             <CustomDropdown

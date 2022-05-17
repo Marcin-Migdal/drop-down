@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Oval } from "@agney/react-loading";
 import { IoMdClose } from "react-icons/io";
+import { PropTypes } from "prop-types";
 
 import { useDebounce } from "../../hooks/useDebounce";
 
@@ -33,7 +34,6 @@ export const CustomDropdown = ({
     const handleClearSelected = () => handleChangeSelected(undefined);
 
     const handleToggleIsLoading = (_isLoading) => setIsLoading(_isLoading);
-
     return (
         <div className="dropdown-container">
             <input
@@ -149,11 +149,37 @@ const DropdownList = ({
                     </li>
                 ))}
                 {isLoading && (
-                    <div className={`loading-list-item ${!options || options.length == 0 ? "empty-options" : ""}`}>
+                    <div className={`loading-list-item ${!options || options.length === 0 ? "empty-options" : ""}`}>
                         <Oval width="50" />
                     </div>
                 )}
             </ul>
         </div>
     );
+};
+
+CustomDropdown.propTypes = {
+    placeholder: PropTypes.string,
+    filterPlaceholder: PropTypes.string,
+
+    handleChangeSelected: PropTypes.func,
+    handleSearch: PropTypes.func,
+
+    clearable: PropTypes.bool,
+
+    selected: PropTypes.shape({
+        label: PropTypes.string,
+        value: PropTypes.string,
+    }),
+
+    options: PropTypes.arrayOf(
+        PropTypes.shape({
+            label: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+            value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        })
+    ),
+    meta: PropTypes.shape({
+        next: PropTypes.string,
+        page: PropTypes.number,
+    }),
 };
